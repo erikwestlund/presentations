@@ -1,0 +1,298 @@
+---
+title: "OHDSI Study Design"
+author: "Erik Westlund"
+date: "2025-08-28"
+---
+
+# OHDSI Study Design
+
+## About Me
+
+- Data Scientist at Johns Hopkins Bloomberg School of Public Health
+- Johns Hopkins Biostatistics Center, Department of Biostatistics
+- Trained in social sciences with 10+ years experience as data scientist and software developer
+- Email: ewestlund@jhu.edu
+
+## Overview
+
+- Understanding OHDSI study protocols
+- Strategus execution framework
+- Common study designs in OHDSI
+- Leveraging OMOP for research flexibility
+
+## About This Presentation
+
+- Focus on practical study design approaches in OHDSI
+- Best practices for reproducible research
+- Community-driven standards and tools
+
+# OHDSI Study Design
+
+## The OHDSI Approach: Protocol → Execute → Report
+
+::: {.columns}
+::: {.column width="33%"}
+### 1. Protocol
+- Pre-specify everything
+- Define diagnostics
+- Set rejection criteria
+:::
+
+::: {.column width="33%"}
+### 2. Execute
+- Run analyses exactly as specified
+- Apply diagnostics uniformly
+- No peeking or adjusting
+:::
+
+::: {.column width="33%"}
+### 3. Report
+- Share ALL results
+- Include failures
+- Full transparency
+- Reproducible evidence
+:::
+:::
+
+
+## Study Protocols in OHDSI
+
+- **Protocols must be written in advance** before study execution
+- Define all analysis parameters upfront
+- Specify diagnostic criteria for result validity
+- Include all decision rules for rejecting findings
+
+## Protocol Components
+
+::: {.columns}
+::: {.column width="50%"}
+### Study Elements
+- Research question
+- Target and comparator cohorts
+- Outcomes of interest
+- Analysis plan
+:::
+
+::: {.column width="50%"}
+### Diagnostics
+- Cohort diagnostics
+- Data quality rejection criteria
+- Negative controls
+:::
+:::
+
+* Take a look at other OHDSI study protocols to see how they are written.
+* Example Protocol: [Semaglutide-NAION](https://ohdsi-studies.github.io/SemaglutideNaion/protocol.html)
+
+# Publication Bias
+
+## LEGEND Hypertension
+
+![P-values from LEGEND study show natural distribution without publication bias](images/ohdsi-study-design/legend-pvalues.png){width="80%"}
+
+::: {.notes}
+The LEGEND study examined comparative effectiveness of first-line hypertension treatments across multiple sites. Note how the p-values form a natural oval distribution in the middle -this is what we expect to see when there's no publication bias or p-hacking.
+:::
+
+## Publication Bias in Action
+
+![Suspicious cutoff at p = 0.05 indicates selective reporting](images/ohdsi-study-design/diagnostics-importance.png){width="80%"}
+
+
+# Strategus
+
+## What is Strategus?
+
+- OHDSI's **execution framework** for running studies at scale
+- Coordinates multiple HADES packages
+- Ensures consistent execution across data sites
+- Supports distributed network studies
+
+## Strategus Architecture
+
+::: {.columns}
+::: {.column width="50%"}
+### Key Features
+- Modular design
+- JSON-based study specifications
+- Automated execution pipeline
+- Results packaging
+:::
+
+::: {.column width="50%"}
+### Benefits
+- Reproducibility across sites
+- Standardized outputs
+- Error handling
+- Progress tracking
+:::
+:::
+
+## Strategus Resources
+
+- [OHDSI Strategus GitHub](https://github.com/OHDSI/Strategus)
+- [Strategus Documentation](https://ohdsi.github.io/Strategus/)
+- [HADES Package Suite](https://ohdsi.github.io/Hades/)
+- Community forums and working groups
+
+# Study Designs
+
+## Characterization Studies
+
+- **Descriptive analysis** of populations
+- Patient demographics and clinical characteristics
+- Temporal trends and patterns
+- No causal inference
+
+## Characterization: Use Cases
+
+- Understanding disease natural history
+- Describing treatment utilization
+- Baseline tables for publications
+
+## Cohort Method
+
+- **Most common** OHDSI study design
+- Compares outcomes between treatment groups
+- Addresses confounding through:
+  - Propensity score matching
+  - Stratification
+  - Weighting
+
+## Cohort Method Strengths
+
+- Large-scale comparative effectiveness
+- Real-world evidence generation
+- Extensive diagnostics suite
+
+## Cohort Method: Diagnostic Threshold Examples
+
+| Diagnostic | Threshold | Purpose |
+|------------|-----------|----------|
+| Covariate Balance (SMD) | < 0.1 | Ensure treatment groups are comparable |
+| Empirical Equipoise | > 0.1 | Confirm clinical uncertainty exists |
+| Systematic Error (EASE) | < 0.25 | Don't report biased results |
+| Minimum Detectable Risk | < 10 | Ensure adequate statistical power |
+
+## Cohort Method: Real-World Example
+
+**Semaglutide-NAION Analysis**
+
+- **14 databases**: 6 claims, 8 EHR systems
+- **>37 million** patients with T2DM analyzed
+
+::: {.columns}
+::: {.column width="50%"}
+**Pass Example (IQVIA Claims)**
+
+- SMD: 0.0151 ✅
+- Equipoise: 0.6896 ✅
+- MDRR: 2.1144 ✅
+:::
+
+::: {.column width="50%"}
+**Fail Example (JHMI EHR)**
+
+- SMD: 0.1708 ❌
+- Equipoise: 0.5807 ✅
+- EASE: 0.2469 ✅
+:::
+:::
+
+## Self-Controlled Case Series (SCCS)
+
+- Patients serve as their **own controls**
+- Compares outcome rates during exposed vs unexposed periods
+- Automatically controls for time-invariant confounders
+
+## When to Use SCCS
+
+- **Transient exposures**: Vaccines, short-term medications, acute infections
+- **Acute, well-defined outcomes**: Heart attack, seizure, allergic reaction
+- **Rare safety events**: Post-marketing surveillance
+- **Confounding by indication concerns**: Within-person design controls for baseline characteristics
+
+## When NOT to Use SCCS
+
+- Exposure risk period is indefinite or unclear
+- Strong age/time trends that cannot be adequately modeled
+
+## SCCS: Diagnostic Thresholds
+
+| Diagnostic | Threshold | Purpose |
+|------------|-----------|----------|
+| Pre-exposure | > 0.05 | Check for outcome-exposure dependence |
+| Time Trend | > 0.05 | Account for temporal patterns |
+| Systematic Error (EASE) | < 0.25 | Limit acceptable bias level |
+| Minimum Detectable Risk | < 10 | Ensure adequate statistical power |
+
+## Treatment Patterns
+
+- Sequences of treatments over time
+- Drug switching and discontinuation
+- Line of therapy analysis
+- Combination therapy patterns
+
+## Treatment Patterns: Applications
+
+- Real-world treatment utilization
+- Adherence and persistence
+- Healthcare resource use
+
+# Flexibility with OMOP
+
+## Any Design is Possible
+
+- OMOP CDM provides a **flexible foundation**
+- Not limited to pre-built HADES packages
+- Custom analyses fully supported
+- SQL, R, Python, or any tool
+
+## Best Practices for Custom Designs
+
+::: {.columns}
+::: {.column width="50%"}
+### Do's
+- Follow OHDSI community idioms
+- Use standard vocabularies
+- Share your methods
+- Contribute back to community
+:::
+
+::: {.column width="50%"}
+### Benefits
+- Leverage existing tools
+- Community support
+- Reproducibility
+- Network studies
+:::
+:::
+
+## Sharing Your Work
+
+- **Open science** is core to OHDSI
+- Publish code on GitHub
+- Share study packages
+- Present at symposiums
+- Contribute to HADES development
+
+# Summary
+
+## Key Takeaways
+
+- **Pre-specify everything** in your protocol
+- Use **Strategus** for scalable execution
+- **Cohort method** is most common, but many designs available
+- OMOP enables **any** study design
+- **Share** your work with the community
+
+## Resources
+
+- [OHDSI Website](https://ohdsi.org)
+- [The Book of OHDSI](https://ohdsi.github.io/TheBookOfOhdsi/)
+- [OHDSI Forums](https://forums.ohdsi.org/)
+- [OHDSI GitHub](https://github.com/OHDSI)
+
+## Questions?
+
+Thank you!
