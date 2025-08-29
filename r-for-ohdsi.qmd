@@ -1,0 +1,596 @@
+---
+title: "R for OHDSI"
+author: "Erik Westlund"
+date: "2025-08-29"
+---
+
+# R for OHDSI
+
+## About Me
+
+- Data Scientist at Johns Hopkins Bloomberg School of Public Health
+- Johns Hopkins Biostatistics Center, Department of Biostatistics
+- Trained in social sciences with 10+ years experience as data scientist and software developer
+- Email: ewestlund@jhu.edu
+
+## Overview
+
+- Why R matters for OHDSI
+- Essential R concepts for OHDSI work
+- Using AI effectively with R
+- Key R skills for debugging and analysis
+
+## About This Presentation
+
+- Focus on practical R skills for OHDSI studies
+- Essential knowledge for working with HADES packages
+- Tips for debugging and troubleshooting
+
+# Why R in OHDSI?
+
+## OHDSI is Built on R
+
+- **HADES packages** are written in R
+- **Strategus** execution framework uses R
+- **Study packages** distributed as R code
+- Most analytical methods implemented in R
+
+## You Need R To:
+
+- **Debug** when things go wrong
+- **Understand** what packages are doing
+- **Customize** analyses for your needs
+- **Run** network studies at your site
+
+# AI and R
+
+## AI Can Help, But...
+
+- AI tools (ChatGPT, Claude, Copilot) can accelerate coding
+- Excellent for boilerplate and common patterns
+- Helpful for understanding error messages
+
+## Critical: Test Everything
+
+- **Always test AI-generated code**
+- **Examine outputs carefully**
+- **Understand what the code does**
+- AI doesn't know your specific OMOP CDM structure
+- May hallucinate functions that don't exist
+
+## Best Practices with AI
+
+::: {.columns}
+::: {.column width="50%"}
+### Do's
+- Use for learning R concepts
+- Debug error messages
+- Generate starter code
+- Explain existing code
+:::
+
+::: {.column width="50%"}
+### Don'ts
+- Trust blindly
+- Skip testing
+- Assume it knows OHDSI specifics
+- Use without understanding
+:::
+:::
+
+# Essential R Concepts
+
+## R and RStudio
+
+- **R** is the programming language
+- **RStudio** is an IDE (Integrated Development Environment)
+- You write R code in RStudio (or VSCode or your preferred editor)
+- All OHDSI packages run in this environment
+
+## R Projects
+
+- Always use R Projects for organization
+- Sets working directory automatically
+- Keeps code and data together
+- Essential for reproducibility
+
+```r
+# Create new project:
+File → New Project
+```
+
+## Objects and Assignment
+
+```{r}
+#| echo: true
+# Assignment uses <- (preferred) or =
+cohortId <- 1
+targetCohort <- 100
+print(cohortId)
+print(targetCohort)
+
+# Everything is an object
+#
+# connectionDetails <- createConnectionDetails(
+#   dbms = "postgresql",
+#   server = "localhost/ohdsi"
+# )
+```
+
+## Vectors: R's Building Blocks
+
+```{r}
+#| echo: true
+# Single values are 1-element vectors
+patientCount <- 1000
+print(patientCount)
+
+# Multiple values
+cohortIds <- c(1, 2, 3, 4, 5)
+conceptIds <- c(313217, 313236, 313238)
+print(cohortIds)
+print(conceptIds)
+```
+
+## Named Vectors
+
+```{r}
+#| echo: true
+# Named vectors are very useful in OHDSI
+cohortNames <- c(
+  "diabetes" = 1,
+  "hypertension" = 2,
+  "depression" = 3
+)
+print(cohortNames)
+
+# Access by name
+print(cohortNames["diabetes"])
+```
+
+## Data Frames
+
+- Most OHDSI results are data frames
+- Tables with rows and columns
+- Each column can be different type
+
+## Data Frame Output
+
+```{r}
+#| echo: true
+# Example cohort table
+library(kableExtra)
+cohort <- data.frame(
+  cohortDefinitionId = c(1, 1, 2, 2),
+  subjectId = c(100, 101, 100, 102),
+  cohortStartDate = as.Date(c("2020-01-01", "2020-02-01", 
+                              "2020-03-01", "2020-04-01"))
+)
+kable(cohort, caption = "Example Cohort Table")
+```
+
+## Data Frame Structure
+
+```{r}
+#| echo: true
+# Check structure
+str(cohort)
+
+# Access columns
+cohort$subjectId
+```
+
+## Functions
+
+```{r}
+#| echo: true
+# Functions are first-class objects in R
+# Example: built-in functions
+myMean <- mean
+mySum <- sum
+
+# They work the same as originals
+testVector <- c(1, 2, 3, 4, 5)
+print(paste("mean():", mean(testVector)))
+print(paste("myMean():", myMean(testVector)))
+```
+
+## Lists: Complex Containers
+
+```{r}
+#| echo: true
+# OHDSI packages often return lists
+results <- list(
+  cohortCounts = data.frame(
+    cohortId = c(1, 2),
+    cohortName = c("diabetes", "hypertension"),
+    cohortCount = c(1520, 3842)
+  ),
+  executionTime = "2024-01-01",
+  cdmSource = "Synpuf"
+)
+
+# Access with $ 
+kable(results$cohortCounts, caption = "Cohort Counts from Results List")
+```
+
+## Accessing List Elements
+
+```{r}
+#| echo: true
+# Multiple ways to access list elements
+print(results$executionTime)
+print(results[["cdmSource"]])
+print(names(results))  # See what's in the list
+```
+
+# Working with Packages
+
+## Installing OHDSI Packages
+
+```r
+# Install from CRAN
+install.packages("DatabaseConnector")
+
+# Install from GitHub (most OHDSI packages)
+remotes::install_github("OHDSI/CohortGenerator")
+
+# Load packages
+library(DatabaseConnector)
+library(CohortGenerator)
+```
+
+## Package Namespacing: A Critical Concept
+
+- Multiple packages can have functions with the same name
+- This causes **conflicts** that can break your code
+- OHDSI packages often conflict with tidyverse packages
+
+```{r}
+#| echo: true
+# Example of conflicting functions
+# Both dplyr and stats have a filter() function
+
+# After loading dplyr, filter() refers to dplyr's version
+# This can break code expecting stats::filter()
+```
+
+## The Double Colon (::) Operator
+
+```{r}
+#| echo: true
+# Use :: to explicitly specify which package
+# PackageName::functionName()
+
+# Examples with real functions
+base::mean(c(1,2,3,4,5))
+base::sum(c(1,2,3,4,5))
+
+# This is especially important with OHDSI packages
+# DatabaseConnector::connect()
+# CohortGenerator::generateCohortSet()
+```
+
+## Common Namespace Conflicts in OHDSI
+
+```{r}
+#| echo: true
+library(knitr)
+conflicts_table <- data.frame(
+  Function = c("select()", "filter()", "summarize()", "sql()"),
+  `Package 1` = c("dplyr", "dplyr", "dplyr", "SqlRender"),
+  `Package 2` = c("MASS", "stats", "Hmisc", "DBI"),
+  Resolution = c("dplyr::select()", "dplyr::filter()", "dplyr::summarize()", "SqlRender::sql()")
+)
+kable(conflicts_table, caption = "Common Function Conflicts", col.names = c("Function", "Package 1", "Package 2", "Best Practice"))
+```
+
+## Checking for Conflicts
+
+```{r}
+#| echo: true
+#| eval: false
+# See all conflicts in your session
+conflicts()
+
+# See which package a function comes from
+environment(mean)  # Shows it's from base/stats
+
+# Check what's loaded
+search()  # Shows all attached packages
+```
+
+## Best Practices for Namespacing
+
+::: {.columns}
+::: {.column width="50%"}
+### Always Use :: For
+- Critical functions
+- Functions from multiple packages
+- OHDSI package functions
+- When sharing code
+:::
+
+::: {.column width="50%"}
+### Benefits
+- Code is self-documenting
+- Prevents mysterious errors
+- Works regardless of load order
+- Makes dependencies clear
+:::
+:::
+
+## Example: OHDSI with Explicit Namespacing
+
+```r
+# Clear and unambiguous
+connection <- DatabaseConnector::connect(connectionDetails)
+
+cohorts <- CohortGenerator::generateCohortSet(
+  connection = connection,
+  cdmDatabaseSchema = cdmDatabaseSchema,
+  cohortDatabaseSchema = cohortDatabaseSchema,
+  cohortTable = cohortTable
+)
+
+results <- CohortMethod::runCohortMethod(
+  connectionDetails = connectionDetails,
+  cdmDatabaseSchema = cdmDatabaseSchema,
+  exposureDatabaseSchema = exposureDatabaseSchema
+)
+
+DatabaseConnector::disconnect(connection)
+```
+
+## Managing Dependencies
+
+- OHDSI packages have many dependencies
+- Use `renv` for reproducibility
+- Check package versions when debugging
+- Especially useful for working with SAFE Desktop
+
+```{r}
+#| echo: true
+#| eval: false
+# Check loaded packages
+sessionInfo()
+
+# See package version
+packageVersion("DatabaseConnector")
+
+# See dependencies of a package
+tools::package_dependencies("CohortGenerator")
+```
+
+## Common OHDSI Package Patterns
+
+```r
+# 1. Create connection
+connection <- connect(connectionDetails)
+
+# 2. Execute analysis
+results <- runAnalysis(
+  connection = connection,
+  cdmDatabaseSchema = "cdm",
+  cohortDatabaseSchema = "results"
+)
+
+# 3. Clean up
+disconnect(connection)
+```
+
+# Debugging Tips
+
+## Reading Error Messages
+
+```r
+Error in connectUsingDriver(dbms = dbms, ...) : 
+  Could not connect to database:
+  FATAL: password authentication failed for user "ohdsi"
+```
+
+**Key parts:**
+
+- Function where error occurred
+- Specific error message
+- Often includes hints for fixing
+
+## Debugging Strategies
+
+1. **Read the full error message**
+2. **Check your connection:** `connection <- connect(cd)`
+3. **Verify schemas exist:** Check cdmDatabaseSchema
+4. **Look at intermediate results:** Use `str()` and `head()`
+5. **Check the forums:** forums.ohdsi.org
+
+## Useful Debugging Functions
+
+```{r}
+#| echo: true
+# Create sample data for demonstration
+debugResults <- list(
+  data = data.frame(
+    id = 1:5,
+    value = c(10, 20, 30, 40, 50)
+  ),
+  status = "complete"
+)
+
+# Examine object structure
+str(debugResults)
+```
+
+## More Debugging Functions
+
+```{r}
+#| echo: true
+# Check object type
+class(debugResults)
+class(debugResults$data)
+
+# List object contents
+names(debugResults)
+
+# Check if object exists
+exists("debugResults")
+exists("nonExistentObject")
+```
+
+## Using head() and tail()
+
+```{r}
+#| echo: true
+# Create larger dataset
+largeCohort <- data.frame(
+  cohortId = rep(1:3, each = 10),
+  subjectId = 101:130,
+  eventDate = seq(as.Date("2024-01-01"), by = "day", length.out = 30)
+)
+
+# View first and last rows
+kable(head(largeCohort, 3), caption = "First 3 rows")
+kable(tail(largeCohort, 3), caption = "Last 3 rows")
+
+```
+
+# File I/O
+
+## Reading and Writing CSV
+
+```{r}
+#| echo: true
+# Create example data to write
+cohortData <- data.frame(
+  cohortId = c(1, 2, 3),
+  cohortName = c("Type 2 Diabetes", "Hypertension", "Depression"),
+  conceptId = c(201826, 316866, 440383)
+)
+
+# Write to temporary file for demo
+tempFile <- tempfile(fileext = ".csv")
+write.csv(cohortData, file = tempFile, row.names = FALSE)
+
+# Read it back
+readData <- read.csv(tempFile)
+kable(readData, caption = "Data read from CSV")
+```
+
+## Working with JSON
+
+```{r}
+#| echo: true
+library(jsonlite)
+
+# Create example cohort definition structure
+cohortDef <- list(
+  id = 1,
+  name = "Type 2 Diabetes",
+  expression = list(
+    conceptId = 201826,
+    includeDescendants = TRUE
+  )
+)
+
+# Convert to JSON
+jsonString <- toJSON(cohortDef, pretty = TRUE, auto_unbox = TRUE)
+cat(jsonString)
+```
+
+# Best Practices
+
+## Code Style for OHDSI
+
+- Use **camelCase** for variables (OHDSI standard)
+- Clear, descriptive names
+- Comment complex logic
+- Format code consistently
+
+```r
+# Good
+targetCohortId <- 1
+comparatorCohortId <- 2
+
+# Less clear
+t <- 1
+c <- 2
+```
+
+## Project Organization
+
+```
+my-study/
+├── R/              # R scripts
+├── inst/
+│   ├── cohorts/    # Cohort JSONs
+│   └── sql/        # SQL queries
+├── results/        # Output files
+└── extras/         # Additional scripts
+```
+
+## Version Control
+
+- Always use Git for your projects
+- Commit frequently with clear messages
+- Never commit passwords or data
+- Use `.gitignore` for sensitive files
+
+```bash
+# Basic git workflow
+git add .
+git commit -m "Add cohort diagnostics"
+git push
+```
+
+# Summary
+
+## Key Takeaways
+
+- **R is essential** for OHDSI work
+- **Understand the basics** before diving into packages
+- **AI helps but verify** - always test generated code
+- **Practice debugging** - errors are learning opportunities
+- **Follow conventions** - makes collaboration easier
+
+
+## Essential Skills Checklist
+
+```{r}
+#| echo: false
+library(knitr)
+checklist <- data.frame(
+  Skill = c(
+    "Create and use R projects",
+    "Work with vectors and data frames",
+    "Install and load packages",
+    "Use package namespacing (::)",
+    "Read error messages",
+    "Debug with str(), head(), class()",
+    "Read and write CSV/JSON files",
+    "Use version control"
+  ),
+  Importance = c(
+    "Sets working directory, organizes files",
+    "Core data structures in R",
+    "Access OHDSI tools",
+    "Avoid conflicts and errors",
+    "First step in troubleshooting",
+    "Understand your data",
+    "Import/export results",
+    "Track changes, collaborate"
+  )
+)
+kable(checklist, col.names = c("Essential Skill", "Why It Matters"))
+```
+
+## Resources
+
+- [R for Data Science](https://r4ds.had.co.nz/)
+- [OHDSI HADES](https://ohdsi.github.io/Hades/)
+- [OHDSI Forums](https://forums.ohdsi.org/)
+- [OHDSI Code Style](https://ohdsi.github.io/Hades/codeStyle.html)
+
+## Questions?
+
+Thank you!
+
+Practice makes perfect - start small and build up!
